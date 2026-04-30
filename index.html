@@ -47,6 +47,7 @@
             padding: 20px;
             -webkit-font-smoothing: antialiased;
             user-select: none;
+            overflow-x: hidden;
         }
 
         .bg-orb {
@@ -60,6 +61,12 @@
         .bg-orb-1 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(91,92,214,0.15) 0%, transparent 70%); top: -12%; left: -18%; }
         .bg-orb-2 { width: 320px; height: 320px; background: radial-gradient(circle, rgba(155,89,182,0.12) 0%, transparent 70%); bottom: -10%; right: -14%; }
         .bg-orb-3 { width: 260px; height: 260px; background: radial-gradient(circle, rgba(230,126,34,0.1) 0%, transparent 70%); top: 55%; left: 50%; }
+        .bg-orb-1 { animation: floatOrb1 12s ease-in-out infinite alternate; }
+        .bg-orb-2 { animation: floatOrb2 14s ease-in-out infinite alternate; }
+        .bg-orb-3 { animation: floatOrb3 10s ease-in-out infinite alternate; }
+        @keyframes floatOrb1 { from { transform: translate3d(0,0,0); } to { transform: translate3d(40px,24px,0); } }
+        @keyframes floatOrb2 { from { transform: translate3d(0,0,0); } to { transform: translate3d(-35px,-18px,0); } }
+        @keyframes floatOrb3 { from { transform: translate3d(0,0,0); } to { transform: translate3d(15px,-26px,0); } }
 
         .card-wrapper {
             position: relative;
@@ -67,6 +74,8 @@
             width: 100%;
             max-width: 460px;
             animation: cardAppear 0.8s ease;
+            transition: transform 0.25s ease;
+            transform-style: preserve-3d;
         }
         @keyframes cardAppear { 0% { opacity: 0; transform: translateY(30px) scale(0.94); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 
@@ -80,6 +89,7 @@
             box-shadow: var(--shadow-xl), 0 0 0 0.5px rgba(255,255,255,0.8) inset;
             position: relative;
             overflow: hidden;
+            will-change: transform;
         }
         .card::before {
             content: '';
@@ -90,6 +100,19 @@
             height: 150px;
             background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 60%);
             z-index: 0;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.35) 35%, transparent 68%);
+            transform: translateX(-130%);
+            animation: lightSweep 7.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes lightSweep {
+            0%, 15% { transform: translateX(-130%); }
+            50%, 100% { transform: translateX(130%); }
         }
         .card-content { position: relative; z-index: 1; }
 
@@ -145,6 +168,20 @@
             backdrop-filter: blur(8px);
             border: 1px solid rgba(0,0,0,0.05);
             transition: all var(--transition-fast);
+            animation: rowReveal 0.7s ease backwards;
+        }
+        .info-row:nth-child(1) { animation-delay: 0.08s; }
+        .info-row:nth-child(2) { animation-delay: 0.13s; }
+        .info-row:nth-child(3) { animation-delay: 0.18s; }
+        .info-row:nth-child(4) { animation-delay: 0.23s; }
+        .info-row:nth-child(5) { animation-delay: 0.28s; }
+        .info-row:nth-child(6) { animation-delay: 0.33s; }
+        .info-row:nth-child(7) { animation-delay: 0.38s; }
+        .info-row:nth-child(8) { animation-delay: 0.43s; }
+        .info-row:nth-child(9) { animation-delay: 0.48s; }
+        @keyframes rowReveal {
+            from { opacity: 0; transform: translateY(14px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .info-row:hover { background: rgba(255,255,255,0.75); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 
@@ -234,6 +271,7 @@
             transition: 0.2s;
         }
         .btn-secondary:hover { background: rgba(255,255,255,0.7); }
+        .btn-primary:active, .btn-secondary:active { transform: translateY(0) scale(0.98); }
 
         .toast {
             position: fixed;
@@ -286,6 +324,7 @@
             .card { padding: 24px 18px 20px; }
             .avatar { width: 54px; height: 54px; font-size: 24px; }
             .header-info h1 { font-size: 21px; }
+            .card::after { animation-duration: 9s; }
         }
     </style>
 </head>
@@ -462,6 +501,8 @@
         };
 
         let currentLang = 'zh';
+        const cardWrapper = document.querySelector('.card-wrapper');
+        const card = document.querySelector('.card');
 
         function switchLanguage(lang) {
             currentLang = lang;
@@ -603,6 +644,25 @@
         document.getElementById('langToggle').addEventListener('click', () => {
             const newLang = currentLang === 'zh' ? 'en' : 'zh';
             switchLanguage(newLang);
+        });
+
+        document.addEventListener('pointermove', (e) => {
+            if (!cardWrapper || window.matchMedia('(max-width: 768px)').matches) return;
+            const rect = cardWrapper.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            const rotateY = (x - 0.5) * 8;
+            const rotateX = (0.5 - y) * 8;
+            cardWrapper.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+            if (card) {
+                card.style.boxShadow = `${-rotateY * 1.2}px ${18 + rotateX * 1.1}px 52px rgba(90,110,150,0.2), 0 0 0 0.5px rgba(255,255,255,0.8) inset`;
+            }
+        });
+
+        document.addEventListener('pointerleave', () => {
+            if (!cardWrapper) return;
+            cardWrapper.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+            if (card) card.style.boxShadow = 'var(--shadow-xl), 0 0 0 0.5px rgba(255,255,255,0.8) inset';
         });
 
         document.addEventListener('keydown', (e) => {
